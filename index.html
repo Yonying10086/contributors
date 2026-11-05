@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贡献者名单</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+            background: transparent; /* 背景透明，方便嵌入主站 */
+            color: #1d1d1f;
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 24px;
+            text-align: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+        .user-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+        }
+        .user-card:hover { transform: translateY(-5px); }
+        .avatar {
+            width: 72px; height: 72px; border-radius: 50%;
+            object-fit: cover; background: #f5f5f7;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
+            transition: box-shadow 0.3s;
+        }
+        .user-card:hover .avatar {
+            box-shadow: 0 10px 24px rgba(0, 113, 227, 0.25);
+            border-color: #0071e3;
+        }
+        .name {
+            font-size: 13px; font-weight: 600; word-break: break-all;
+        }
+        .loading {
+            grid-column: 1 / -1; text-align: center; color: #6e6e73; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid" id="grid">
+    <div class="loading">读取头像中...</div>
+</div>
+
+<script>
+    // 自动获取当前仓库地址，不需要填任何用户名
+    const pathParts = window.location.pathname.split('/');
+    const repoName = pathParts[1]; 
+    const userName = window.location.hostname.split('.')[0];
+    const apiUrl = `https://api.github.com/repos/${userName}/${repoName}/contents/avatars`;
+
+    fetch(apiUrl)
+        .then(res => res.json())
+        .then(files => {
+            const grid = document.getElementById('grid');
+            if (!Array.isArray(files) || files.length === 0) {
+                grid.innerHTML = '<div class="loading">暂无图片</div>';
+                return;
+            }
+            grid.innerHTML = '';
+            files.forEach(file => {
+                if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(file.name)) return;
+                const name = file.name.replace(/\.[^/.]+$/, "");
+                const imgUrl = file.download_url; // 直接使用 GitHub 提供的图片链接
+
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.innerHTML = `
+                    <img src="${imgUrl}" alt="${name}" class="avatar" loading="lazy">
+                    <span class="name">${name}</span>
+                `;
+                grid.appendChild(card);
+            });
+        })
+        .catch(() => {
+            document.getElementById('grid').innerHTML = '<div class="loading">加载失败</div>';
+        });
+</script>
+</body>
+</html>
